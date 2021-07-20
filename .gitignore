@@ -1,0 +1,13 @@
+__pycache__
+.vscode/*
+.DS_Store
+temp
+pcl_test
+images/*
+*.png
+*.bmp
+*.ply
+*.pcd
+*.exr
+*~
+images/camera_kd.yml
