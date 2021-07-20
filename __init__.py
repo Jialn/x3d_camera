@@ -1,2 +1,2 @@
-# Copyright (c) 2020 XFORWARDAI. All Rights Reserved.
+# Copyright (c) 2020. All Rights Reserved.
 

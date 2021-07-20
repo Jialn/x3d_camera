@@ -1,6 +1,6 @@
-# Copyright (c) 2020 XFORWARDAI. All Rights Reserved.
+# Copyright (c) 2020. All Rights Reserved.
 # Created on 2020-10-09
-# Autor: Jiangtao <jiangtao.li@xforwardai.com>
+# Autor: Jiangtao <jiangtao.li@gmail.com>
 """
 A low level python interface to control PDC03 projector
 Test: python -m projector_pdc03

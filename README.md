@@ -25,6 +25,7 @@ Tested on ubuntu18.04 and python3.6
   pip install opencv-python pyserial hidapi open3d
 
   ```
+  Also need to put struc_light side by side with the folder of this repo.
 
 ## Test
 

@@ -1,6 +1,6 @@
-# Copyright (c) 2020 XFORWARDAI. All Rights Reserved.
+# Copyright (c) 2020. All Rights Reserved.
 # Created on 2021-04-01
-# Autor: Jiangtao <jiangtao.li@xforwardai.com>
+# Autor: Jiangtao <jiangtao.li@gmail.com>
 """
 Description: xForward 3D Camera structure light algorithm pipeline
 

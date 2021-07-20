@@ -1,6 +1,6 @@
-# Copyright (c) 2020 XFORWARDAI. All Rights Reserved.
+# Copyright (c) 2020. All Rights Reserved.
 # Created on 2020-10-12
-# Autor: Jiangtao <jiangtao.li@xforwardai.com>
+# Autor: Jiangtao <jiangtao.li@gmail.com>
 """
 Description: 
 A Wrapper of Huaray Camera SDK with PDC 03 projector HW trigger support. 
