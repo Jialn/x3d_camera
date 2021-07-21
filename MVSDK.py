@@ -6,18 +6,22 @@ Created on 2017-10-18
 @author: 
 '''
 from ctypes import *
-import os
+import os,sys
 
 #定义枚举类型
 def enum(**enums):
     return type('Enum', (), enums)
 
 #加载SDK动态库
-if os.uname()[4] == "aarch64":  # arm64
-    LibPath = os.path.dirname(os.path.realpath(__file__)) + "/lib_arm64/libMVSDK.so"
+if sys.platform == 'win32': # windows
+    LibPath = os.path.dirname(os.path.realpath(__file__)) + "/lib/dll/MVSDKmd.dll"
+    MVSDKdll = OleDLL(LibPath)
+elif os.uname()[4] == "aarch64":  # arm64
+    LibPath = os.path.dirname(os.path.realpath(__file__)) + "/lib/libMVSDK-arm64.so"
+    MVSDKdll = cdll.LoadLibrary(LibPath)
 else:
     LibPath = os.path.dirname(os.path.realpath(__file__)) + "/lib/libMVSDK.so"
-MVSDKdll = cdll.LoadLibrary(LibPath)
+    MVSDKdll = cdll.LoadLibrary(LibPath)
 
 #SDK.h => define 宏定义
 MAX_PARAM_CNT        = 1000

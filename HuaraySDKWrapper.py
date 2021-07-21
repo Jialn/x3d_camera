@@ -6,9 +6,8 @@ Description:
 A Wrapper of Huaray Camera SDK with PDC 03 projector HW trigger support. 
 Note that add some extra delays when using the new USB3.0 Camera.
 """
-from numba.core import config
-from ImageConvert import *
 from MVSDK import *
+from ImageConvert import *
 import struct
 import time
 import datetime
@@ -792,7 +791,8 @@ class HuarayCamera():
         """Init
 
         Args:
-            pdc_03_port: usb serial port of projector, usually it is like /dev/ttyUSB0
+            hw_trigger: use hardware trigger or not
+            scale: scale the image
         """
         self._logging = logging
         # camera parameters

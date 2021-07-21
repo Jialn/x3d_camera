@@ -9,11 +9,15 @@ from ctypes import *
 import os,sys
 
 # 加载ImageConvert库
-if os.uname()[4] == "aarch64":  # arm64
-    LibPath = os.path.dirname(os.path.realpath(__file__)) + "/lib_arm64/libImageConvert.so"
-else:
+if sys.platform == 'win32': # windows
+    LibPath = os.path.dirname(os.path.realpath(__file__)) + "/lib/dll/ImageConvert.dll"
+    ImageConvertdll = OleDLL(LibPath)
+elif os.uname()[4] == "aarch64":  # arm64
+    LibPath = os.path.dirname(os.path.realpath(__file__)) + "/lib/libImageConvert-arm64.so"
+    ImageConvertdll = cdll.LoadLibrary(LibPath)
+else: # linux
     LibPath = os.path.dirname(os.path.realpath(__file__)) + "/lib/libImageConvert.so"
-ImageConvertdll = cdll.LoadLibrary(LibPath)
+    ImageConvertdll = cdll.LoadLibrary(LibPath)
 
 #定义枚举类型
 def enum(**enums):

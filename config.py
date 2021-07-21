@@ -34,21 +34,25 @@ class Config():
     # Camera Parameters
     # hardware related
     camera_ids = [0, 1]  # The id of camera. For Dual cam, it could be [0,1] or [1,2]. Note that 0 could be the usb webcam if a laptop is used. 
-    switch_left_right = True
+    switch_left_right = False
     is_color_camera = True
     use_high_speed_projector = False  # note high_speed prj only support phase shift patterns
     is_white_projector = True  # blue projector or white projector
     default_testing_scale = 1.0  # for x3d_camera test program
     # only for color camera
     do_imagearray_reshape_in_camera_call_back = True  # build imagearray in camera callback or after all images are captured
-    do_demosac_for_color_camera = False  # if not, demosac will be done in the later progress by GPU
+    do_demosac_for_color_camera = True  # if not, demosac will be done in the later progress by GPU
     use_blue_channel_for_color_camera = is_color_camera and (not is_white_projector)  # color convert to gray or use blue channel only. If use white projector, set to False
     fake_color_using_blue_light = False and (not is_color_camera) and (not is_white_projector)
     # for low speed 30fps projector
     if not use_high_speed_projector:
         hw_triger_delay = 20  # 10
         scan_time = [0, pattern_start_index, 10] # [interval_time, start_index, display_time]
-        projector_port = "/dev/ttyUSB0"
+        import sys
+        if sys.platform == 'win32':
+            projector_port = "COM3"
+        else:
+            projector_port = "/dev/ttyUSB0"
     # for hi-speed projector
     if use_high_speed_projector:
         hw_triger_delay = 5  # 10
