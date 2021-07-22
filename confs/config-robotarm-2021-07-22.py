@@ -50,10 +50,8 @@ class Config():
         hw_triger_delay = 20  # 10
         scan_time = [0, pattern_start_index, 10] # [interval_time, start_index, display_time]
         import sys
-        if sys.platform == 'win32':
-            projector_port = "COM3"
-        else:
-            projector_port = "/dev/ttyUSB0"
+        if sys.platform == 'win32': projector_port = "COM3"
+        else: projector_port = "/dev/ttyUSB0"
     # for hi-speed projector
     if use_high_speed_projector:
         hw_triger_delay = 5  # 10
@@ -83,17 +81,11 @@ class Config():
         high_led_current = 50 + (round)((led_current - 50) * hdr_high_exp_rate)
         phsft_thres = 2
 
-
     def __init__(self):
         """Init.
         """
-        # with open("./config.json") as cfg_file:
-        #    cfgs = json.load(cfg_file)
-        # print( cfgs["use_rendered_image"])
         pass
 
 
 if __name__ == "__main__":
-    # cfg = Config()
-    # print(Config.options)
     pass

@@ -6,11 +6,11 @@ Description:
 A calibrating helper for stereo structure-light x3d camera
 
 To run on real camera, set "use_rendered_images = False" then:
-python -m stereo_calib "temp/stereocali/"
+python -m stereo_calib "images/stereocali/"
 This will open camera, grabing the image interactively and do the calibration.
 
 To run on rendered data, set "use_rendered_images = True" then:
-python -m stereo_calib "temp/stereocali_render/", change the path accrodingly
+python -m stereo_calib "images/stereocali_render/", change the path accrodingly
 
 This will call the capture images first to the specified path, and the do the calibrating and save calib.yml to the same path.
 copy it to where you needed.
@@ -38,14 +38,14 @@ capture=False
 capture=True and (not use_rendered_images)  # comment this line if capture is not needed
 # write to or not
 cali_cfg_path = None
-cali_cfg_path = "x3d_camera/images/raw/"  # comment this line if you dont want to update the camera cfg file
+cali_cfg_path = "confs/"  # comment this line if you dont want to update the camera cfg file
 corners_vertical = 8
 corners_horizontal = 11
 corner_distance = 0.015  # in meters
 
 if use_rendered_images:
     print("calibrating for rendered images")
-    cali_cfg_path = "x3d_camera/images/raw/"
+    cali_cfg_path = "confs/"
     corners_vertical = 8
     corners_horizontal = 11
     corner_distance = 0.014302  # in meters
@@ -279,8 +279,10 @@ if __name__ == '__main__':
     
     # copy cali files
     if cali_cfg_path is not None:
-        cmd = "cp " + path + "calib.yml" + " " + cali_cfg_path
-        print("running cmd:" + cmd)
-        os.system(cmd)
+        # cmd = "cp " + path + "calib.yml" + " " + cali_cfg_path
+        # print("running cmd:" + cmd)
+        # os.system(cmd)
+        import shutil
+        shutil.copy(path + "calib.yml", cali_cfg_path+"calib.yml")
 
     exit()

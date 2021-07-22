@@ -233,7 +233,7 @@ class X3DCamera():
 # test with real camera: "python py"
 # record dataset command example: "python py dataset ./dataset_3dpattern 0"
 if __name__ == "__main__":
-
+    import shutil
     if len(sys.argv) <= 1:  # run with no args, use the real camera
         depth_camera = X3DCamera(logging=True, scale=Config.default_testing_scale)
         while True:
@@ -254,8 +254,11 @@ if __name__ == "__main__":
             points = gen_point_clouds_from_images(depth_img_mm, depth_camera._camera_kd, depth_vis, save_path="./")
         else:
             points = depth_camera.get_point_cloud(save=Config.save_point_cloud, recaptue_rgb=True)
+        if Config.save_pattern_to_disk:
+            shutil.copy(depth_camera._cali_file_path, depth_camera._pattern_path+"/calib.yml")
         import open3d as o3d
         points.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+        cv2.destroyAllWindows()
         o3d.visualization.draw(geometry=points, width=1600, height=900, point_size=1,
             bg_color=(0.5, 0.5, 0.5, 0.5), show_ui=True)
         print("res saved in:" + depth_camera._res_path)
