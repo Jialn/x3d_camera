@@ -118,7 +118,8 @@ class X3DCamera():
         dir_path = os.path.dirname(os.path.realpath(__file__))  # dir of this file
         self._res_path = dir_path + "/images"
         self._pattern_path = self._res_path + "/raw/"
-        self._rectifier = StereoRectify(scale=scale, cali_file=self._pattern_path+'calib.yml')
+        self._cali_file_path = dir_path + "/" + Config.cali_file
+        self._rectifier = StereoRectify(scale=scale, cali_file=self._cali_file_path)
         # run capture for once to init internal flags
         # self._camera.get_one_frame(self.camera_ids[0], force_gray=False, use_env_exp=True)  # left
         # self.close_projector()
@@ -284,7 +285,7 @@ if __name__ == "__main__":
                 # update build-in path
                 depth_camera._res_path = current_path
                 depth_camera._pattern_path = current_path + "/raw/"
-                depth_camera._rectifier = StereoRectify(scale=scale, cali_file=depth_camera._pattern_path+'calib.yml')
+                depth_camera._rectifier = StereoRectify(scale=scale, cali_file=depth_camera._cali_file_path)
                 # get images
                 rgb_img, gray_img, depth_img = depth_camera.get_images()
                 points = depth_camera.get_point_cloud(save=True)
