@@ -18,7 +18,7 @@ class Config():
 
     # Alg Parameters
     pose_detector_type = "mask2d"  # "pvn3d", "mask2d", or "ir_marker"
-    use_phsft = True
+    use_phsft = True  # must be true, only support gray + phase shift for now
     save_all_patterns = False and (save_pattern_to_disk)
     # use_phsft = False
     pattern_start_index = 0

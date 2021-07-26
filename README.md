@@ -16,7 +16,7 @@ Tested on ubuntu18.04 and python3.6
 ### Huarry Camera SDK
 - Install huarry camera SDK if our own structure light depth camera is used
 
-  http://download.huaraytech.com/pub/sdk/Ver2.2.3/
+  http://download.huaraytech.com/pub/sdk/Ver2.2.3/ or
   http://download.huaraytech.com/pub/sdk/Ver2.2.5/
 
 ### Others

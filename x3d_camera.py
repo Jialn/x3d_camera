@@ -35,7 +35,7 @@ if Config.use_phsft:
     import structured_light_cuda as struli
     struli.phase_decoding_unvalid_thres = Config.phsft_thres
 else:
-    from x3d_camera import structured_light as struli
+    import structured_light as struli
 
 def adjust_gamma(imgs, gamma=1.0):
     # build a lookup table mapping the pixel values [0, 255] to

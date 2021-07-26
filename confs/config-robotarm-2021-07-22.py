@@ -18,7 +18,7 @@ class Config():
 
     # Alg Parameters
     pose_detector_type = "mask2d"  # "pvn3d", "mask2d", or "ir_marker"
-    use_phsft = True
+    use_phsft = True  # must be true, only support gray + phase shift for now
     save_all_patterns = False and (save_pattern_to_disk)
     # use_phsft = False
     pattern_start_index = 0
@@ -42,7 +42,7 @@ class Config():
     default_testing_scale = 1.0  # for x3d_camera test program
     # only for color camera
     do_imagearray_reshape_in_camera_call_back = True  # build imagearray in camera callback or after all images are captured
-    do_demosac_for_color_camera = True  # if not, demosac will be done in the later progress by GPU
+    do_demosac_for_color_camera = False  # if not, demosac will be done in the later progress by GPU
     use_blue_channel_for_color_camera = is_color_camera and (not is_white_projector)  # color convert to gray or use blue channel only. If use white projector, set to False
     fake_color_using_blue_light = False and (not is_color_camera) and (not is_white_projector)
     # for low speed 30fps projector
