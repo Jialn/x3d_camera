@@ -251,7 +251,9 @@ if __name__ == "__main__":
             if key == 27: break  # ESC pressed
         if Config.use_depth_as_cloud_color:
             depth_vis = convert_depth_to_color(depth_img_mm)
-            points = gen_point_clouds_from_images(depth_img_mm, depth_camera._camera_kd, depth_vis, save_path="./")
+            gray_vis = (0.5 + gray_img / 512.0)
+            depth_vis = (depth_vis * np.tile(gray_vis[:, :, None], (1, 1, 3))).astype(np.uint8)
+            points = gen_point_clouds_from_images(depth_img_mm, depth_camera._camera_kd, depth_vis, save_path="./images/")
         else:
             points = depth_camera.get_point_cloud(save=Config.save_point_cloud, recaptue_rgb=True)
         if Config.save_pattern_to_disk:
