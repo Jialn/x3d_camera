@@ -91,11 +91,7 @@ if __name__ == '__main__':
     cv2.setMouseCallback("image", on_EVENT_LBUTTONDOWN)
     cv2.imshow("image", gray_img_vis)
     while (True):
-        try:
-            key = cv2.waitKey(100)
-        except Exception:
-            cv2.destroyAllWindows()
-            break
+        key = cv2.waitKey(100)
         if key == 27: break  # ESC
     cv2.destroyAllWindows()
 
@@ -124,6 +120,18 @@ if __name__ == '__main__':
     depth_vis = (img_res * np.tile(gray_vis[:, :, None], (1, 1, 3))).astype(np.uint8)
     points = gen_point_clouds_from_images(depth_img_mm, camera_kd, depth_vis, save_path=dir)
     # show results
-    cv2.imshow("res", img_res)
-    cv2.waitKey(0)
+    gray_img_vis = cv2.resize(depth_vis, image_vis_size)
+    def on_EVENT_LBUTTONDOWN2(event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            x_org,y_org = (int)(x*vis_scale),(int)(y*vis_scale)
+            cv2.circle(gray_img_vis, (x, y), 3, (255, 255, 255), thickness=1)
+            img_str = "%.3f mm" % (depth_plane[y_org, x_org] - depth_img_mm[y_org, x_org])
+            cv2.putText(gray_img_vis, img_str, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), thickness=1)
+            cv2.imshow("image", gray_img_vis)
+    cv2.namedWindow("image")
+    cv2.setMouseCallback("image", on_EVENT_LBUTTONDOWN2)
+    cv2.imshow("image", gray_img_vis)
+    while (True):
+        key = cv2.waitKey(100)
+        if key == 27: break  # ESC
     cv2.destroyAllWindows()
