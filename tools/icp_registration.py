@@ -1,4 +1,4 @@
-# Copyright (c) 2020 XFORWARDAI. All Rights Reserved.
+# Copyright (c) 2020. All Rights Reserved.
 #
 # Register all the ply file in the path
 # Install open-3d: "pip3 install open3d", do not use "open3d-python"

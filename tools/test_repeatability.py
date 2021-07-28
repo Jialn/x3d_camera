@@ -1,4 +1,4 @@
-# Copyright (c) 2020 XFORWARDAI. All Rights Reserved.
+# Copyright (c) 2020. All Rights Reserved.
 #
 # usage: python x3d_camera/blender_ws/test_repeatability.py '/media/ubuntu/pm951_jt/dataset_render/'
 

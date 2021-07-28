@@ -249,8 +249,12 @@ if __name__ == "__main__":
                 if key & 0xFF == ord(' '): break
                 if key == 27: break  # ESC
             if key == 27: break  # ESC pressed
+        cv2.imwrite("./images/gray.bmp", gray_img)
+        cv2.imwrite("./images/depth.exr", depth_img_mm)
+        np.savetxt("./images//camera_kd.txt", depth_camera.get_camera_kp())
+        depth_vis = convert_depth_to_color(depth_img_mm)
+        cv2.imwrite("./images/depth_vis.jpg", depth_vis)
         if Config.use_depth_as_cloud_color:
-            depth_vis = convert_depth_to_color(depth_img_mm)
             gray_vis = (0.5 + gray_img / 512.0)
             depth_vis = (depth_vis * np.tile(gray_vis[:, :, None], (1, 1, 3))).astype(np.uint8)
             points = gen_point_clouds_from_images(depth_img_mm, depth_camera._camera_kd, depth_vis, save_path="./images/")

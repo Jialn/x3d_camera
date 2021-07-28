@@ -9,7 +9,7 @@ import subprocess
 import platform
 
 COPYRIGHT = '''
-Copyright (c) 2020 XFORWARDAI. All Rights Reserved.
+Copyright (c) 2020. All Rights Reserved.
 '''
 
 LANG_COMMENT_MARK = None
