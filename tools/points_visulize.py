@@ -1,16 +1,17 @@
 # Copyright (c) 2020. All Rights Reserved.
 # Visulize depth using color map by fited ref plane
 # usage: 
-#   1. spefiy path to variable "image_path"
-#   2. the path should include "gray.bmp  depth.exr  camera_kd.txt"
-#   3. python tools\points_visulize.py
+#   1. python tools\points_visulize.py "./images/"
+#   2. the path should include "gray.png  depth.exr  camera_kd.txt"
 
+import sys
 import numpy as np
 import cv2
 import argparse
 import open3d as o3d
 
 image_path = "./images/temp/"
+image_path = sys.argv[1]
 
 def gen_point_clouds_from_images(depth, camera_kp, image, save_path=None):
     """Generate PointCloud from images and camera kp
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     # dir = args.filepath
     dir = image_path
 
-    gray_img = cv2.imread(dir+"gray.bmp", cv2.IMREAD_UNCHANGED)
+    gray_img = cv2.imread(dir+"gray.png", cv2.IMREAD_UNCHANGED)
     depth_img_mm = cv2.imread(dir+"depth.exr", cv2.IMREAD_UNCHANGED)
     camera_kd = np.loadtxt(dir+"camera_kd.txt")
 
@@ -113,12 +114,12 @@ if __name__ == '__main__':
     # gen color map results
     a, b, c = float(fit[0]), float(fit[1]), float(fit[2])
     depth_plane=np.fromfunction(lambda i,j: a*j+b*i+c, (height,width), dtype=float)
-    img_res = convert_depth_to_color(depth_img_mm, scale=None, depth_plane=depth_plane, percentile=(10, 90))
+    img_res = convert_depth_to_color(depth_img_mm, scale=None, depth_plane=depth_plane, percentile=(5, 90))
     cv2.imwrite(dir+"depth_vis_res.jpg", img_res)
     # gen point clouds
     gray_vis = (0.5 + gray_img / 512.0)
     depth_vis = (img_res * np.tile(gray_vis[:, :, None], (1, 1, 3))).astype(np.uint8)
-    points = gen_point_clouds_from_images(depth_img_mm, camera_kd, depth_vis, save_path=dir)
+    points = gen_point_clouds_from_images(depth_img_mm, camera_kd, depth_vis, save_path=dir+"/points_vis.ply")
     # show results
     gray_img_vis = cv2.resize(depth_vis, image_vis_size)
     def on_EVENT_LBUTTONDOWN2(event, x, y, flags, param):

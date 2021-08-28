@@ -6,8 +6,8 @@ Description: xForward 3D Camera
 
 This class implement the xForward structure light 3D camera.
 
-Test with real camera: "python py"
-Record dataset command example: "python py dataset ./dataset_3dpattern 0"
+Test with real camera: "python x3d_camera.py"
+Record dataset command example: "python x3d_camera.py dataset ./dataset_3dpattern 0"
 
 The typical procedure of a 3D capture is:
 1. trigger the projector, scan all patterns saved in projector;
@@ -230,8 +230,8 @@ class X3DCamera():
         self._camera._projector.turn_led(0)
 
 
-# test with real camera: "python py"
-# record dataset command example: "python py dataset ./dataset_3dpattern 0"
+# test with real camera: "python x3d_camera.py"
+# record dataset command example: "python x3d_camera.py dataset ./dataset 0"
 if __name__ == "__main__":
     import shutil
     if len(sys.argv) <= 1:  # run with no args, use the real camera
@@ -249,9 +249,9 @@ if __name__ == "__main__":
                 if key & 0xFF == ord(' '): break
                 if key == 27: break  # ESC
             if key == 27: break  # ESC pressed
-        cv2.imwrite("./images/gray.bmp", gray_img)
+        cv2.imwrite("./images/gray.png", gray_img)
         cv2.imwrite("./images/depth.exr", depth_img_mm)
-        np.savetxt("./images//camera_kd.txt", depth_camera.get_camera_kp())
+        np.savetxt("./images/camera_kd.txt", depth_camera.get_camera_kp())
         depth_vis = convert_depth_to_color(depth_img_mm)
         cv2.imwrite("./images/depth_vis.jpg", depth_vis)
         if Config.use_depth_as_cloud_color:
@@ -275,8 +275,10 @@ if __name__ == "__main__":
             exit()
         
         if sys.argv[1] == 'dataset':  # record dataset
+            import shutil
             scale = 1.0 # 0.5
-            cali_file_path = "./x3d_camera/images/raw/calib.yml"
+            save_points = False
+            cali_file_path = Config.cali_file
             saving_path = sys.argv[2] + '/'
             start_id = (int)(sys.argv[3])
             depth_camera = X3DCamera(logging=True, scale=scale)
@@ -288,22 +290,26 @@ if __name__ == "__main__":
                 if not os.path.exists(current_path):
                     os.makedirs(current_path)
                     os.makedirs(current_path + "/raw")
-                cmd = "cp " + cali_file_path + " " + current_path + "/raw/"
-                print("running cmd:" + cmd)
-                os.system(cmd)
+                # cmd = "cp " + cali_file_path + " " + current_path + "/raw/"
+                # print("running cmd:" + cmd)
+                # os.system(cmd)
+                shutil.copy(cali_file_path, current_path + "/calib.xml")
                 # update build-in path
                 depth_camera._res_path = current_path
                 depth_camera._pattern_path = current_path + "/raw/"
-                depth_camera._rectifier = StereoRectify(scale=scale, cali_file=depth_camera._cali_file_path)
+                # depth_camera._rectifier = StereoRectify(scale=scale, cali_file=depth_camera._cali_file_path)
                 # get images
                 rgb_img, gray_img, depth_img = depth_camera.get_images()
-                points = depth_camera.get_point_cloud(save=True)
                 # save images and post process
-                cv2.imwrite(current_path+'/rgb_image.png', rgb_img)
-                h, w = rgb_img.shape[:2]
-                cv2.imshow("img", rgb_img)
+                if rgb_img: cv2.imwrite(current_path+'/rgb_image.png', rgb_img)
+                cv2.imwrite(current_path+'/gray.png', gray_img)
+                cv2.imwrite(current_path+'/depth.exr', depth_img)
+                np.savetxt(current_path+"./camera_kd.txt", depth_camera.get_camera_kp())
+                points = depth_camera.get_point_cloud(save=save_points)
+                if rgb_img: cv2.imshow("img", rgb_img)
+                else: cv2.imshow("img", gray_img)
                 # write a preview in saving folder
-                cv2.imwrite(saving_path + current_id_str + '.png', rgb_img)
+                cv2.imwrite(saving_path + current_id_str + '.jpg', gray_img)
                 print("Press space on the image window to continue capture frame:" + str(start_id+1) + ", or press ESC to end the script")
                 while True:
                     key = cv2.waitKey(10)

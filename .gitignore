@@ -4,6 +4,7 @@ __pycache__
 temp
 pcl_test
 images/*
+dataset/*
 *.png
 *.bmp
 *.ply
