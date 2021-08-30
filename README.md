@@ -13,7 +13,7 @@ The main repository for X3D Camera.
 ### Instrcutions
 - 安装Python3.8, 建议 Python3.8.6 or Python3.8.10，安装时注意选择把python添加进path
 - 下载安装Huarry Camera SDK：http://download.huaraytech.com/pub/sdk/Ver2.2.5/
-- 下载安装VS2019: https://visualstudio.microsoft.com/zh-hans/vs/community/
+- 下载安装VS2019 (Linux跳过此步): https://visualstudio.microsoft.com/zh-hans/vs/community/
     安装VS2019完毕后需要添加"cl.exe"的环境变量，示例: `C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\Hostx64\x64`
 
 - 下载安装CUDA11.4：https://developer.nvidia.com/cuda-downloads
@@ -21,12 +21,7 @@ The main repository for X3D Camera.
   ```
   pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
   pip install numpy opencv-python pyserial hidapi open3d pycuda
-  pip install pycuda open3d
   ```
-
-    
-
-
 
 ## Test
 
