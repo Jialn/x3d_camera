@@ -20,7 +20,6 @@ class Config():
     pose_detector_type = "mask2d"  # "pvn3d", "mask2d", or "ir_marker"
     use_phsft = True  # must be true, only support gray + phase shift for now
     save_all_patterns = False and (save_pattern_to_disk)
-    # use_phsft = False
     pattern_start_index = 0
     pattern_end_index = 38  # the pattern number in projector, used for images capture
     if not save_all_patterns:
@@ -35,7 +34,7 @@ class Config():
     # Camera Parameters
     # hardware related
     camera_ids = [0, 1]  # The id of camera. For Dual cam, it could be [0,1] or [1,2]. Note that 0 could be the usb webcam if a laptop is used. 
-    switch_left_right = False
+    switch_left_right = True
     is_color_camera = False
     use_high_speed_projector = True  # note high_speed prj only support phase shift patterns
     is_white_projector = True  # blue projector or white projector

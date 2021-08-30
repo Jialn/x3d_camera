@@ -51,13 +51,13 @@ fixed_objs_in_scene = [] # reserved, TODO. fixed obj in scene, example: find obj
 range_obj_number_in_one_scene = (3, 10)  # include left and right
 
 ### path
-# saving_path = "/home/ubuntu/workplace/3dperceptionprototype/temp/dataset_render/"
+# saving_path = "/home/ubuntu/workplace/temp/dataset_render/"
 saving_path = "/media/ubuntu/pm951_jt/dataset_render/"
 cali_img_path = saving_path + 'cali_imgs/'
 ### path for 3d_cam
-# cali_img_path = '/home/ubuntu/workplace/3dperceptionprototype/temp/stereocali_render/'
-# pattern_path = '/home/ubuntu/workplace/3dperceptionprototype/temp/images_render/raw/'
-# gt_path = '/home/ubuntu/workplace/3dperceptionprototype/temp/images_render/'
+# cali_img_path = '/home/ubuntu/workplace/temp/stereocali_render/'
+# pattern_path = '/home/ubuntu/workplace/temp/images_render/raw/'
+# gt_path = '/home/ubuntu/workplace/temp/images_render/'
 
 ### set pos and rot
 # depth_camera_pos = [0, 0, 1.0]  # [x, y, z], in meters
@@ -425,7 +425,7 @@ def gen_one_pattern_for_3d_cam():
     # generate rendered patterns
     path = pattern_path
     generate_pattern(path)
-    print("generate patterns end! If for 3D camera testing, now you can run: 'python x3d_camera.py")
+    print("generate patterns end! If for 3D camera testing, now you can run: 'python struli_camera_main.py")
 
 def gen_gt(path):
     # generate depth and rendered patterns without light bounces

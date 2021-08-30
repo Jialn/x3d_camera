@@ -39,7 +39,7 @@ class Config():
     is_color_camera = True
     use_high_speed_projector = False  # note high_speed prj only support phase shift patterns
     is_white_projector = True  # blue projector or white projector
-    default_testing_scale = 1.0  # for x3d_camera test program
+    default_testing_scale = 1.0  # for struli_camera_main test program
     # only for color camera
     do_imagearray_reshape_in_camera_call_back = True  # build imagearray in camera callback or after all images are captured
     do_demosac_for_color_camera = False  # if not, demosac will be done in the later progress by GPU

@@ -15,15 +15,15 @@ python -m stereo_calib "images/stereocali_render/", change the path accrodingly
 This will call the capture images first to the specified path, and the do the calibrating and save calib.yml to the same path.
 copy it to where you needed.
 
-If you dont need to capture image again, like the case trying calib for the second time. comment the line "capture=True"
-If you dont need to save result to where the depth cam uses, cali_cfg_path = "x3d_camera/images/raw"
+If you don't need to capture image again, like the case trying calib for the second time. comment the line "capture=True"
+If you don't need to save result to where the depth cam uses, cali_cfg_path = "images/raw"
 """
 import os
 import numpy as np
 import cv2
 import glob
 import argparse
-from x3d_camera import X3DCamera
+from struli_camera_main import X3DCamera
 from config import Config
 if Config.use_high_speed_projector:
     from projector_lcp4500 import PyLCR4500

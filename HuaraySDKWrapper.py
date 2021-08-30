@@ -710,76 +710,7 @@ def capture_all_patterns(synced_projector, camera_ids, path, scan_time):
             cv2.imwrite(path + str(i) + '_r' + '.bmp', g_captured_images_right[i])
     print("Pre-process time(reshape bytearray, optional demosac, scale, save image, etc): %.3f s" % (time.time() - start_time))
 
-
-def hdr_amplify_diff_of_inv(img_list, img_list_high_exp, save_path=None):
-    # hdr2: add (highexp_image - highexp_image_inv) to low exp image
-    # for 7 + 1 + 4 phase shift only
-    gray_code_range = (0, 10)
-    # gray code
-    for cnt in range(Config.pattern_start_index+gray_code_range[0], Config.pattern_start_index+gray_code_range[1]):
-        img_list[cnt] =  img_list[cnt] // 2 + img_list_high_exp[cnt] // 2
-        if Config.save_pattern_to_disk: cv2.imwrite(save_path + str(cnt) + "hdr.jpg", img_list[cnt])
-    # phsft
-    for cnt in range(Config.pattern_start_index+gray_code_range[1], Config.pattern_start_index+gray_code_range[1]+2, 1):
-        high = img_list_high_exp[cnt].astype(np.int16)
-        high_inv =  img_list_high_exp[cnt+2].astype(np.int16)
-        high_diff = high - high_inv
-        # high_diff = (high_diff * high_pattern_weight).astype(np.int16)
-        high_diff_inv = - high_diff
-        low = img_list[cnt].astype(np.int16)
-        low_inv =  img_list[cnt+2].astype(np.int16)
-        hdr = low + high_diff
-        img_list[cnt] = np.clip(hdr, 0, 255).astype(np.uint8)
-        hdr_inv = low_inv + high_diff_inv
-        img_list[cnt+2] = np.clip(hdr_inv, 0, 255).astype(np.uint8)
-        if Config.save_pattern_to_disk: cv2.imwrite(save_path + str(cnt) + "hdr.jpg", img_list[cnt])
-        if Config.save_pattern_to_disk: cv2.imwrite(save_path + str(cnt+2) + "hdr.jpg", img_list[cnt+2])
-
-def hdr_using_reflective_ratio(img_list, img_list_high_exp, save_path=None):
-    # for 7 + 1 + 4 phase shift only
-    ref = img_list[Config.pattern_start_index+0] # 0 light on, 1 light off
-    ref_mean = np.mean(ref)
-    ref = ref / ref_mean  # normalize mean to 1.0
-    print(ref_mean)
-    ref_max = 255.0/ref_mean
-    high_weight = ref_max - ref
-    low_weight =  ref
-    high_weight = high_weight * 0.5 / np.mean(high_weight)
-    low_weight = low_weight * 0.5 / np.mean(low_weight)
-    # gray code
-    image_range = range(Config.pattern_start_index+0, Config.pattern_start_index+10)
-    for cnt in image_range:
-        img_list[cnt] =  img_list[cnt] // 2 + img_list_high_exp[cnt] // 2
-        if Config.save_pattern_to_disk: cv2.imwrite(save_path[:-2] + str(cnt) + save_path[-2:] + ".bmp", img_list[cnt])
-    # phsft
-    image_range = range(Config.pattern_start_index+10, Config.pattern_start_index+14)
-    if Config.use_high_speed_projector: # high spd projector needs fixed expo time, should use diff to elimate env light
-        for cnt in image_range:
-            diff_of_higher_prj = img_list_high_exp[cnt].astype(np.int16) - img_list[cnt]
-            hdr = diff_of_higher_prj * high_weight + img_list[cnt] #  * low_weight
-            img_list[cnt] = np.clip(hdr, 0, 255).astype(np.uint8)
-            if Config.save_pattern_to_disk: cv2.imwrite(save_path[:-2] + str(cnt) + save_path[-2:] + ".bmp", img_list[cnt])
-    else:
-        for cnt in image_range:
-            hdr = img_list_high_exp[cnt] * high_weight + img_list[cnt] * low_weight
-            img_list[cnt] = np.clip(hdr, 0, 255).astype(np.uint8)
-            if Config.save_pattern_to_disk: cv2.imwrite(save_path[:-2] + str(cnt) + save_path[-2:] + ".bmp", img_list[cnt])
-
-def hdr_16bit(img_list, img_list_high_exp, save_path=None):
-    # return 16 bit hdr images
-    # only for 7+1+4 phsft pattern
-    # the following procedures should be able to handle 16bit unsigned short images
-    image_range = range(Config.pattern_start_index+0, Config.pattern_start_index+14)
-    for cnt in image_range:
-        # low_expo_image = img_list[cnt].astype(np.uint16)
-        # gamma_corrected_low_expo_image = (low_expo_image + 255) / 255 * low_expo_image
-        gamma_corrected_low_expo_image = img_list[cnt].astype(np.uint16)
-        hdr = (Config.hdr_high_exp_rate * gamma_corrected_low_expo_image).astype(np.uint16)
-        low_expo_pts = np.where(img_list[cnt] < 32)
-        hdr[low_expo_pts] = img_list_high_exp[cnt][low_expo_pts]
-        img_list[cnt] = hdr
-        if Config.save_pattern_to_disk: cv2.imwrite(save_path[:-2] + str(cnt) + save_path[-2:] + ".bmp", img_list[cnt])
-
+from depth_map_utils import hdr_using_reflective_ratio
 hdr_preprocess = hdr_using_reflective_ratio
 
 class HuarayCamera():
@@ -998,8 +929,8 @@ class HuarayCamera():
                 setExposureTime(cam, self.exp_time)
         capture_all_patterns(synced_projector=self._projector, camera_ids=self.camera_ids, path=path+"lowexp_", scan_time=self.scan_time)
 
-        hdr_preprocess(self.captured_images_left, captured_images_left_high_exp, save_path=path+"_l")
-        hdr_preprocess(self.captured_images_right, captured_images_right_high_exp, save_path=path+"_r")
+        hdr_preprocess(Config, self.captured_images_left, captured_images_left_high_exp, save_path=path+"_l")
+        hdr_preprocess(Config, self.captured_images_right, captured_images_right_high_exp, save_path=path+"_r")
 
     def close(self):
         """ Release camera

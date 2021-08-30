@@ -1,6 +1,6 @@
 # Copyright (c) 2020. All Rights Reserved.
 # used to process the dataset, like coping or updating the calib file
-# usage: python x3d_camera/blender_ws/dataset_process_script.py '/media/ubuntu/pm951_jt/dataset_render/'
+# usage: python blender_ws/dataset_process_script.py '/media/ubuntu/pm951_jt/dataset_render/'
 
 import os
 import numpy as np

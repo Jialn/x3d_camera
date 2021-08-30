@@ -51,13 +51,13 @@ fixed_objs_in_scene = [] # reserved, TODO. fixed obj in scene, example: find obj
 range_obj_number_in_one_scene = (3, 10)  # include left and right
 
 ### path
-# saving_path = "/home/ubuntu/workplace/3dperceptionprototype/temp/dataset_render/"
+# saving_path = "/home/ubuntu/workplace/temp/dataset_render/"
 saving_path = "/media/ubuntu/pm951_jt/dataset_render_with_phsft_pattern/"
 cali_img_path = saving_path + 'cali_imgs/'
 ### path for 3d_cam
-# cali_img_path = '/home/ubuntu/workplace/3dperceptionprototype/temp/stereocali_render/'
-# pattern_path = '/home/ubuntu/workplace/3dperceptionprototype/x3d_camera/images_render/raw/'
-# gt_path = '/home/ubuntu/workplace/3dperceptionprototype/x3d_camera/images_render/'
+# cali_img_path = '/home/ubuntu/workplace/temp/stereocali_render/'
+# pattern_path = '/home/ubuntu/workplace/images_render/raw/'
+# gt_path = '/home/ubuntu/workplace/images_render/'
 
 ### set pos and rot
 # depth_camera_pos = [0, 0, 1.0]  # [x, y, z], in meters
@@ -388,7 +388,7 @@ if gen_cali_images:
     set_pos_projector_and_cameras(x=depth_camera_pos[0], y=depth_camera_pos[1], z=depth_camera_pos[2], rot_x=depth_camera_rot_x)
 
     print("generate calibating script end! now you can run: \
-        'python -m x3d_camera.stereo_calib temp/stereocali_render/' to calibrate \
+        'python -m struli_camera_main.stereo_calib temp/stereocali_render/' to calibrate \
          make sure use_render_image=True flag in the repo's globe config file.")
     exit()
 
@@ -425,7 +425,7 @@ def gen_one_pattern_for_3d_cam():
     # generate rendered patterns
     path = pattern_path
     generate_pattern(path)
-    print("generate patterns end! If for 3D camera testing, now you can run: 'python -m x3d_camera.x3d_camera")
+    print("generate patterns end! If for 3D camera testing, now you can run: 'python -m struli_camera_main.struli_camera_main")
 
 def gen_gt(path):
     # generate depth and rendered patterns without light bounces

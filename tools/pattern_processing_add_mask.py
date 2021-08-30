@@ -1,7 +1,7 @@
 # Copyright (c) 2020. All Rights Reserved.
 # used to process the pattern folder, add a mask to pattern
 # usage: python temp/pattern_processing.py './temp/gray_code_pattern/' './temp/mask.bmp' 
-# python temp/pattern_processing.py '/home/ubuntu/workplace/3dperceptionprototype/temp/gray_code_pattern/' '/home/ubuntu/workplace/3dperceptionprototype/temp/maskscene1/aluboard1.bmp'
+# python temp/pattern_processing.py '/home/ubuntu/workplace/temp/gray_code_pattern/' '/home/ubuntu/workplace/temp/maskscene1/aluboard1.bmp'
 
 import os
 import numpy as np
