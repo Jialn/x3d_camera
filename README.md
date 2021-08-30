@@ -1,37 +1,38 @@
 # X3D Camera
 The main repository for X3D Camera.
 
-## Overview
-This repository includes
-
-- python wrapper for structure light depth camera
-
-    1. drivers and python interface of huarry industrial camera and projector
-    2. structure light depth generation interface
-
 
 ## Installation
-Tested on ubuntu18.04 and python3.6
 
-### Huarry Camera SDK
-- Install huarry camera SDK if our own structure light depth camera is used
+### 已经验证过的平台和环境
+- 操作系统：Windows10, Ubuntu18.04, Ubuntu20.04, Nvidia NX的自带操作系统; 注意更换操作系统需要重新编译pyd文件，默认的pyd文件为Windows10下编译的版本
+- Python版本：Python3.8.6, Python 3.8.10;
+- CUDA版本：CUDA 11.2, CUDA11.4; 注意不同架构的显卡需要重新编译cubin文件，默认的文件为RTX30系显卡编译的版本
 
-  http://download.huaraytech.com/pub/sdk/Ver2.2.3/ or
-  http://download.huaraytech.com/pub/sdk/Ver2.2.5/
 
-### Others
+### Instrcutions
+- 安装Python3.8, 建议 Python3.8.6 or Python3.8.10，安装时注意选择把python添加进path
+- 下载安装Huarry Camera SDK：http://download.huaraytech.com/pub/sdk/Ver2.2.5/
+- 下载安装VS2019: https://visualstudio.microsoft.com/zh-hans/vs/community/
+    安装VS2019完毕后需要添加"cl.exe"的环境变量，示例: `C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\Hostx64\x64`
 
+- 下载安装CUDA11.4：https://developer.nvidia.com/cuda-downloads
+- 通过Pip安装packages
   ```
-  pip install opencv-python pyserial hidapi open3d
-
+  pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+  pip install numpy opencv-python pyserial hidapi open3d pycuda
+  pip install pycuda open3d
   ```
-  Also need to put struc_light side by side with the folder of this repo.
+
+    
+
+
 
 ## Test
 
 - Test 3D camera
   ```
-  python -m x3d_camera.x3d_camera
+  python -m struli_camera_main.struli_camera_main
   ```
 
 ## Progress of Calibration
@@ -43,7 +44,7 @@ Tested on ubuntu18.04 and python3.6
 5. 抓图. 按e键切换抓图模式，相机将会自动增加曝光。标定时曝光要向右曝光，如需修改，相机相关参数设置在config.py，曝光参数exp_time = ***. 标定抓图会自动改为这个值的二倍。
 按S保存图片，存够9张后按ESC退出抓图，执行标定
 6. 检查标定结果：
-``python x3d_camera.py`` 抓取3D图，然后打开结果文件夹：
+``python struli_camera_main.py`` 抓取3D图，然后打开结果文件夹：
 ``nautilus ./images``
  用 meshlab 打开 pc_cl_bi.ply，点云应该横平竖直，现实中的平面在点云成像中各个角度观察都无明显弯曲
 
