@@ -1,5 +1,5 @@
 # Copyright (c) 2020. All Rights Reserved.
-# Created on 2020-10-12
+# Created on 2021-09-05
 # Autor: Jiangtao <jiangtao.li@gmail.com>
 """
 Description: 
@@ -7,7 +7,6 @@ A Wrapper of Huaray Camera SDK with PDC 03 projector HW trigger support.
 Note that add some extra delays when using the new USB3.0 Camera.
 """
 from MVSDK import *
-from ImageConvert import *
 import struct
 import time
 import datetime

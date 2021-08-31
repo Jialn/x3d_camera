@@ -1312,3 +1312,31 @@ class GENICAM_ImageFormatControlInfo(Structure):
 
 #SDK.h => GENICAM_createImageFormatControl(GENICAM_ImageFormatControlInfo* pImageFormatControlInfo, GENICAM_ImageFormatControl** ppImageFormatControl)
 GENICAM_createImageFormatControl = MVSDKdll.GENICAM_createImageFormatControl
+
+
+# ImageConvert.h => enum tagIMGCNV_EErr
+IMGCNV_EErr = enum(
+                      IMGCNV_SUCCESS = 0,
+                      IMGCNV_ILLEGAL_PARAM = 1,
+                      IMGCNV_ERR_ORDER = 2,
+                      IMGCNV_NO_MEMORY = 3,
+                      IMGCNV_NOT_SUPPORT = 4,
+                      )
+
+# ImageConvert.h => struct tagIMGCNV_SOpenParam
+class IMGCNV_SOpenParam(Structure):
+    _fields_ = [
+                ('width', c_int),
+                ('height', c_int),
+                ('paddingX', c_int),
+                ('paddingY', c_int),
+                ('dataSize', c_int),
+                ('pixelForamt', c_uint),
+                ]
+# ImageConvert.h => enum tagIMGCNV_EBayerDemosaic
+IMGCNV_EErr = enum(
+                      IMGCNV_DEMOSAIC_NEAREST_NEIGHBOR = 0,
+                      IMGCNV_DEMOSAIC_BILINEAR = 1,
+                      IMGCNV_DEMOSAIC_EDGE_SENSING = 2,
+                      IMGCNV_DEMOSAIC_NOT_SUPPORT = 255,
+                      )
