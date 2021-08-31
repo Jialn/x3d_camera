@@ -1,10 +1,13 @@
-# Copyright (c) 2020. All Rights Reserved.
-# Created on 2021-09-05
-# Autor: Jiangtao <jiangtao.li@gmail.com>
+#!/usr/bin/env python
+# coding: utf-8
 """
+Created on 2017-10-18
+
+@author: Huaray
+
 Description: 
-A Wrapper of Huaray Camera SDK with PDC 03 projector HW trigger support. 
-Note that add some extra delays when using the new USB3.0 Camera.
+Modified from Huaray SDK example.
+Add supoort for projector hardware trigger.
 """
 from MVSDK import *
 import struct

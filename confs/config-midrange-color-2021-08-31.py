@@ -14,13 +14,12 @@ class Config():
     re_capture_color_image_using_env_exposure = False or save_pattern_to_disk
     save_point_cloud = True
     use_depth_as_cloud_color = False
-    cali_file = "confs/cali-highspd-near-mid-range-2021-07-22.yml"
+    cali_file = "confs/calib-midrange-color-2021-08-31.yml"
 
     # Alg Parameters
     pose_detector_type = "mask2d"  # "pvn3d", "mask2d", or "ir_marker"
     use_phsft = True  # must be true, only support gray + phase shift for now
     save_all_patterns = False and (save_pattern_to_disk)
-    # use_phsft = False
     pattern_start_index = 0
     pattern_end_index = 38  # the pattern number in projector, used for images capture
     if not save_all_patterns:
@@ -36,10 +35,10 @@ class Config():
     # hardware related
     camera_ids = [0, 1]  # The id of camera. For Dual cam, it could be [0,1] or [1,2]. Note that 0 could be the usb webcam if a laptop is used. 
     switch_left_right = True
-    is_color_camera = False
+    is_color_camera = True
     use_high_speed_projector = True  # note high_speed prj only support phase shift patterns
     is_white_projector = True  # blue projector or white projector
-    default_testing_scale = 1.0  # for struli_camera_main test program
+    default_testing_scale = 1.0  # for x3d_camera test program
     # only for color camera
     do_imagearray_reshape_in_camera_call_back = True  # build imagearray in camera callback or after all images are captured
     do_demosac_for_color_camera = False  # if not, demosac will be done in the later progress by GPU
@@ -58,7 +57,7 @@ class Config():
         scan_time = [5, pattern_start_index, 15] # [interval_time, start_index, display_time]
         pat_exp_time = scan_time[2] * 1000  # used to setup pattern exposure time for uniform exp pattern mode.
         frame_period = (scan_time[0] + scan_time[2]) * 1000  # used to setup frame period of projector. If frame pattern count is 1, it represent time duration of adjacent pattern.
-        led_current = 51  # PWM duty cycle strength. 0->no current, 255->max current
+        led_current = 125  # PWM duty cycle strength. 0->no current, 51-> low current, 255->max current
     # expo and white balance
     enable_auto_exposure = False  # automaticly find a proper exp time
     auto_expo_range_for_env_light = [90, 130]  # the expected mean range for env light when auto_exposing
@@ -66,13 +65,13 @@ class Config():
         auto_expo_range_for_pattern = [30, 50]  # should have low exp for patterns
     else:
         auto_expo_range_for_pattern = [30, 50]  # could be a litlle bit higher for for graycode pattern
-    exp_time = 9900.0  # exposure time for 3D projector, us. ignore this if enable_auto_exposure
-    exp_time_env = 220000.0  # exposure time for environmet images without projector openning. ignore this if enable_auto_exposure
+    exp_time = 14000.0  # exposure time for 3D projector, us. ignore this if enable_auto_exposure
+    exp_time_env = 60000.0  # exposure time for environmet images without projector openning. ignore this if enable_auto_exposure
     gamma = 1.0  # 1.0, 0.8; if < 1.0, level the black zone up, better for dark zone. but bring lots of flying points
     white_balance_red_ratio = 1.9
     white_balance_blue_ratio = 1.9
     # hdr
-    enable_hdr = True
+    enable_hdr = False
     hdr_high_exp_rate = 2.0 # led_current will be set to led_current*hdr_high_exp_rate for high speed projector
                             # high exposure time = hdr_high_exp_rate * exp_time for low spd projector
     if enable_hdr:

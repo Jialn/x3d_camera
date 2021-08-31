@@ -3,7 +3,7 @@
 '''
 Created on 2017-10-18
 
-@author: 
+@author: Huaray
 '''
 from ctypes import *
 import os,sys

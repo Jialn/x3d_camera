@@ -5,21 +5,22 @@ The main repository for X3D Camera.
 ## Installation
 
 ### 已经验证过的平台和环境
-- 操作系统：Windows10, Ubuntu18.04, Ubuntu20.04, Nvidia NX的自带操作系统;
+- 操作系统：Windows10, Ubuntu18.04, Ubuntu20.04, Nvidia Xavier NX的自带操作系统;
 
 - Python版本：Python3.8.6, Python 3.8.10;
 
-  注意更换操作系统和python版本需要重新编译*.pyd文件，默认的pyd文件为Windows10下Python3.8.6编译的版本。
+  注意更换操作系统和python版本需要重新编译*.pyd文件，默认的pyd文件为Windows10下Python 3.8.6，Cython 0.29.24编译的版本。
 
 - CUDA版本：CUDA 11.2, CUDA11.4; 
 
-   注意不同架构的显卡需要重新编译cuda_core.cubin文件，默认的文件为RTX30系显卡编译的版本
+   注意不同架构的显卡需要重新编译cuda_core.cubin文件，默认的文件为RTX30系显卡，CUDA11.4编译的版本
 
 
 ### Instrcutions
-- 安装Python3.8, 建议 Python3.8.6 or Python3.8.10，安装时注意选择把python添加进path
+- 安装Python3.8, 建议 Python3.8.6，安装时注意选择把python添加进path
 - 下载安装Huarry Camera SDK：http://download.huaraytech.com/pub/sdk/Ver2.2.5/
 - 下载安装VS2019 (Linux跳过此步): https://visualstudio.microsoft.com/zh-hans/vs/community/
+    安装时需要确认“使用C++的桌面开发”是勾选状态
     安装VS2019完毕后需要添加"cl.exe"的环境变量，示例: `C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\Hostx64\x64`
 
 - 下载安装CUDA11.4：https://developer.nvidia.com/cuda-downloads
@@ -40,7 +41,7 @@ The main repository for X3D Camera.
 
 1. 开启光机开关
 
-2. 开启相机预览 ``python stereo_calib.py "temp/stereocali/" ``会弹出left和right窗后预览，用手挡一下左相机，检查左右是否插反，如果反了就在Config中设置一下switch_left_right
+2. 当前目录下新建文件夹"images/stereocali/", 开启相机预览 ``python stereo_calib.py "images/stereocali/" ``会弹出left和right窗后预览，用手挡一下左相机，检查左右是否插反，如果反了就在Config中设置一下switch_left_right
 
 3. 调整光机投影视野范围，工作区间尽可能居中；调整左右相机视野尽可能全覆盖光机视野范围。对广角相机，左右视差不可太大，工作区域的物体在左右图中像素位置应尽量靠近
 
