@@ -3,6 +3,8 @@
 This file is not for general python env!
 Should be runing inside blender.
 
+For the first time, make sure camera name is correct.
+
 For usage with dataset gen:
     set saving_path
     set data_set_start_id, data_set_length, then wait for done
@@ -20,7 +22,7 @@ For usage with dataset gen:
 # ./pip3 install --upgrade pip
 # ./pip3 install opencv-python
 import os
-import bpy 
+import bpy
 import numpy as np
 import math
 import cv2
@@ -30,6 +32,36 @@ from bpy import context
 from mathutils import Matrix, Vector
 import numpy as np
 import math
+
+
+#######################
+### Confs
+gen_data_set = True
+main_scene_name = "_mainScene"
+left_camera_name_in_scene = 'Camera'
+right_camera_name_in_scene = 'Camera.right'
+
+### path
+saving_path = "/home/jiangtao.li/Pictures/"
+cali_img_path = saving_path + 'cali_imgs/'
+
+### for gen dataset
+data_set_start_id = 0
+data_set_length = 1
+frames_range = range(0, 1)  # (0, 24) for dataset gen, smaller range for script testing
+gen_camera_para = True
+
+### set left camera parameters, paras about right cameras are auto caculated
+left_camera_pos = [1.5, -4.4, 1.09]  # [x, y, z] of left camera, in meters
+left_camera_rot = [90, 0, 0] # rotate degree around [x, y, z]-axis
+fov_angle = (3.1415926/180.0) * 85
+baseline = 0.25
+resolution_x = 1280
+resolution_y = 800
+cycles_samples = 256
+cycles_max_bounces = 8 # 0 or 8
+use_denoising = True
+
 
 """
 Description: 
@@ -158,31 +190,7 @@ def mat2euler(mat, axes_para=(0, 0, 0, 0)):
         ax, az = az, ax
     return [ax, ay, az]
 
-
-#######################
-### Confs
-gen_data_set = True
-main_scene_name = "_mainScene"
-left_camera_name_in_scene = 'Camera'
-right_camera_name_in_scene = 'Camera.right'
-
-### path
-saving_path = "/home/jiangtao.li/Pictures/"
-cali_img_path = saving_path + 'cali_imgs/'
-
-### for gen dataset
-data_set_start_id = 0
-data_set_length = 1
-frames_range = range(0, 1)  # (0, 24) for dataset gen, smaller range for script testing
-gen_camera_para = True
-
-
-### set camera parameters
-left_camera_pos = [2.57, -4.4, 1.09]  # [x, y, z] of left camera, in meters
-left_camera_rot = [90, 0, 0] # rotate degree around [x, y, z]-axis
-fov_angle = (3.1415926/180.0) * 90
-baseline = 0.25
-# paras about right cameras, auto caculated
+# paras about right cameras, are auto caculated
 left_camera_pose_mat = xyzrpy2mat(np.array(left_camera_pos+left_camera_rot))
 right_camera_pos = np.array(left_camera_pos) + np.dot(left_camera_pose_mat, np.array([baseline, 0, 0, 0]).T).T[:3]
 print(np.dot(left_camera_pose_mat, np.array([baseline, 0, 0, 0]).T).T[:3])
@@ -193,16 +201,6 @@ def set_camera_pose():
     set_obj_pose(left_camera_name_in_scene, pos[0], pos[1], pos[2], rot[0], rot[1], rot[2])
     pos, rot = right_camera_pos, right_camera_rot
     set_obj_pose(right_camera_name_in_scene, pos[0], pos[1], pos[2], rot[0], rot[1], rot[2])
-
-resolution_x = 1280
-resolution_y = 800
-
-cycles_samples = 64
-cycles_max_bounces = 8 # 0 or 8
-
-
-# resolution_x = 2592
-# resolution_y = 2048
 
 # BKE_camera_sensor_size
 def get_sensor_size(sensor_fit, sensor_x, sensor_y):
@@ -301,17 +299,35 @@ def get_3x4_P_matrix_from_blender(cam):
 def gen_camera_paras(savepath=None):
     # return a dict
     res = {}
-    P, K, RT = get_3x4_P_matrix_from_blender(bpy.data.objects["Camera"])
+    P, K, RT = get_3x4_P_matrix_from_blender(bpy.data.objects[left_camera_name_in_scene])
     # if savepath is not None: np.savetxt(savepath + '_left_cameraK.txt', K)
     res['left_camera_k'] = np.array(K).tolist()
     res['left_camera_rt'] = np.array(RT).tolist()
     res['left_camera_p'] = np.array(P).tolist()
-    P, K, RT = get_3x4_P_matrix_from_blender(bpy.data.objects["Camera.right"])
+    P, K, RT = get_3x4_P_matrix_from_blender(bpy.data.objects[right_camera_name_in_scene])
     res['right_camera_k'] = np.array(K).tolist()
     res['right_camera_rt'] = np.array(RT).tolist()
     res['right_camera_p'] = np.array(P).tolist()
     return res
     
+def gen_califile_from_render_camera_para(camera_para, path):
+    K1, K2 = np.array(camera_para['left_camera_k']), np.array(camera_para['right_camera_k'])
+    D1, D2 = np.zeros(5), np.zeros(5)
+    RT1, RT2 = np.array(camera_para['left_camera_rt']), np.array(camera_para['right_camera_rt'])
+    RT1 = np.insert(RT1, 3, values=np.array([0., 0., 0., 1.]), axis=0)
+    RT2 = np.insert(RT2, 3, values=np.array([0., 0., 0., 1.]), axis=0)
+    RT = np.dot(RT2, np.linalg.inv(RT1))
+    R, T = RT[:3,:3], RT[:3, 3]
+    outfile = cv2.FileStorage(path, cv2.FileStorage_WRITE)
+    outfile.write('K1', K1)
+    outfile.write('K2', K2)
+    outfile.write('D1', D1)
+    outfile.write('D2', D2)
+    outfile.write('R', R)
+    outfile.write('T', T)
+    outfile.release()
+    print("opencv stereo cali result saved to:" + path)
+
 def set_obj_pose(name, x=None, y=None, z=None, rot_x=None, rot_y=None, rot_z=None):
     active_obj = bpy.data.objects[name] # caliboard
     active_obj.select_set(True)
@@ -341,11 +357,26 @@ def saveNormalizedExr(filepath, savepath, minVal=0, maxVal=2.0, use_16bit=False)
     cv2.imwrite(savepath, exrMap, [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
     print("saved converted exr to:" + savepath)
 
+def convert_depth_to_color(depth_map_meter):
+    depth_image_color_vis = depth_map_meter.copy()
+    # depth_image_color_vis[np.isnan(depth_image_color_vis)] = 0  # not working
+    valid_points = np.where(depth_image_color_vis <= 10000000.000)
+    depth_near_cutoff, depth_far_cutoff = np.percentile(depth_image_color_vis[valid_points], 5), np.percentile(depth_image_color_vis[valid_points], 95)
+    if np.isnan(depth_far_cutoff):
+        print("depth_far_cutoff is nan!")
+        depth_far_cutoff = depth_near_cutoff + 10.0
+    depth_far_cutoff = depth_near_cutoff + (depth_far_cutoff-depth_near_cutoff) * 1.2
+    depth_range = depth_far_cutoff-depth_near_cutoff
+    print((depth_near_cutoff, depth_far_cutoff))
+    depth_image_color_vis[valid_points] = depth_far_cutoff - depth_image_color_vis[valid_points]  # - depth_near_cutoff
+    depth_image_color_vis = cv2.applyColorMap(cv2.convertScaleAbs(depth_image_color_vis, alpha=255/(depth_range)), cv2.COLORMAP_JET)  #COLORMAP_JET HOT
+    return depth_image_color_vis
+
 def saveX3dDepth(filepath, savepath):
     depth = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
     depth = depth[:,:,1]
-    depth = depth * 30000.0 # * 60000.0 / 2.0
-    cv2.imwrite(savepath, depth.astype(np.uint16), [int(cv2.IMWRITE_PNG_COMPRESSION), 0])
+    depth = convert_depth_to_color(depth)
+    cv2.imwrite(savepath, depth, [int(cv2.IMWRITE_PNG_COMPRESSION), 5])
     print("saved converted exr to:" + savepath)
 
 scene = bpy.context.scene
@@ -356,18 +387,19 @@ scene.objects[right_camera_name_in_scene].data.angle = fov_angle
 scene.render.resolution_x = resolution_x
 scene.render.resolution_y = resolution_y
 
-scene.cycles.caustics_reflective = False
+scene.cycles.caustics_reflective = True
 scene.cycles.caustics_refractive = False
 scene.cycles.filter_width = 1
 scene.cycles.samples = cycles_samples  # 128
-scene.cycles.use_denoising = False  # True
+scene.cycles.use_denoising = use_denoising  # True
 scene.cycles.max_bounces = cycles_max_bounces  # 12, 8 or 0
 
 def add_img_output_node():
     # clear all nodes
     tree = scene.node_tree
-    for n in tree.nodes:
-        tree.nodes.remove(n)
+    for node in tree.nodes:
+        # if n.label == 'Image'
+        tree.nodes.remove(node)
     links = tree.links
     # Create input render layer node.
     render_layers = tree.nodes.new('CompositorNodeRLayers')
@@ -377,7 +409,7 @@ def add_img_output_node():
     links.new(render_layers.outputs['Image'], image_file_output.inputs[0])
     image_file_output.base_path = ''
 
-add_img_output_node()
+# add_img_output_node()
 
 def generate_pattern(path, max_bounces=8, use_hdr=False):
     scene.render.engine = 'CYCLES'
@@ -390,7 +422,7 @@ def generate_pattern(path, max_bounces=8, use_hdr=False):
     scene.render.use_file_extension = True
     scene.view_settings.exposure = -0.3
 
-    scene.camera = bpy.data.objects["Camera"]
+    scene.camera = bpy.data.objects[left_camera_name_in_scene]
     for frame_nr in frames_range:
         # set current frame
         scene.frame_set(frame_nr)
@@ -398,7 +430,7 @@ def generate_pattern(path, max_bounces=8, use_hdr=False):
         bpy.data.scenes[main_scene_name].render.filepath = path + str(frame_nr) + "_l"
         bpy.ops.render.render(write_still=True)
         
-    scene.camera = bpy.data.objects["Camera.right"]
+    scene.camera = bpy.data.objects[right_camera_name_in_scene]
     for frame_nr in frames_range:
         scene.frame_set(frame_nr)
         print("current frame:" + str(frame_nr))
@@ -409,8 +441,9 @@ def generate_pattern(path, max_bounces=8, use_hdr=False):
 
 def gen_gt(path):
     # generate depth and rendered patterns without light bounces
-    scene.cycles.max_bounces = 0  # 12, 8 or 0
     scene.render.engine = 'CYCLES'
+    scene.cycles.max_bounces = 0  # 12, 8 or 0
+    scene.cycles.samples = 2
     scene.render.image_settings.color_mode = 'RGB'
     # 必须设置OPEN_EXR，否则无法输出深度
     scene.render.image_settings.file_format = "OPEN_EXR"
@@ -419,16 +452,18 @@ def gen_gt(path):
     bpy.context.scene.render.use_compositing = True
     # set nodes
     scene.use_nodes = True
+    
     tree = scene.node_tree
     links = tree.links
-    # clear all nodes
-    for n in tree.nodes:
-        tree.nodes.remove(n)
+    # clear unused nodes
+    for node in tree.nodes:
+        if node.label == 'Depth GT Output':
+            tree.nodes.remove(node)
     # Create input render layer node.
     render_layers = tree.nodes.new('CompositorNodeRLayers')
     # add depth node
     depth_file_output = tree.nodes.new(type="CompositorNodeOutputFile")
-    depth_file_output.label = 'Depth Output'
+    depth_file_output.label = 'Depth GT Output'
     links.new(render_layers.outputs['Depth'], depth_file_output.inputs[0])
     # set empty base path
     depth_file_output.base_path = ''
@@ -442,7 +477,7 @@ def gen_gt(path):
     print("current frame:" + frame_append)
     
     # render left
-    scene.camera = bpy.data.objects["Camera"]
+    scene.camera = bpy.data.objects[left_camera_name_in_scene]
     bpy.data.scenes[main_scene_name].render.filepath = path + "left"
     depth_file_output.file_slots[0].path = scene.render.filepath + '_depth_'
     bpy.data.scenes[main_scene_name].render.filepath = path + str(frame_nr) + "_l"
@@ -455,7 +490,7 @@ def gen_gt(path):
     # saveNormalizedExr(image_file_output.file_slots[0].path + frame_append + ".exr", image_file_output.file_slots[0].path + frame_append + ".png")
 
     # render right
-    scene.camera = bpy.data.objects["Camera.right"]
+    scene.camera = bpy.data.objects[right_camera_name_in_scene]
     bpy.data.scenes[main_scene_name].render.filepath = path + "right"
     depth_file_output.file_slots[0].path = scene.render.filepath + '_depth_'
     bpy.data.scenes[main_scene_name].render.filepath = path + str(frame_nr) + "_r"
@@ -469,28 +504,22 @@ def gen_gt(path):
     camera_para_dict = gen_camera_paras(path + str(frame_nr))
     object_poses_dict = {}
     for obj in scene.objects:
-        print(obj.name)
+        # print(obj.name)
         # print(obj.location.x)
         # print(obj.matrix_world)
         object_poses_dict[obj.name] =  np.array(obj.matrix_world).tolist()
 
     with open(path+"camera_para_dict.json", "w") as json_file:
         json.dump(camera_para_dict, json_file)
-    with open(path+"object_poses_dict.json", "w") as json_file:
-        json.dump(object_poses_dict, json_file)
-        
+    # with open(path+"object_poses_dict.json", "w") as json_file:
+    #     json.dump(object_poses_dict, json_file)  
+    gen_califile_from_render_camera_para(camera_para_dict, path+"calibra.xml")
     # rm unsed files
-    cmd = "rm " + path + "1_l.exr " + path + "1_r.exr"
+    cmd = "rm " + path + "0_l.exr " + path + "0_r.exr"
     print("run cmd: " + cmd)
     os.system(cmd)
-
-    # clear all added nodes and add default node back
-    for n in tree.nodes:
-        tree.nodes.remove(n)
-    add_img_output_node()
-    # set back max_bounces
     scene.cycles.max_bounces = cycles_max_bounces  # 12, 8 or 0
-    
+    scene.cycles.samples = cycles_samples  # 128
     print("generate gt script end! the path is: " + path)
 
 if gen_data_set:
@@ -515,7 +544,18 @@ if gen_data_set:
         # cv2.imwrite(saving_path+current_id_str+".jpg", img, [cv2.IMWRITE_PNG_COMPRESSION, 1])
         sample_time = (time.time() - sample_start_time) / 60.0
         print("sample time (in min):" + str(sample_time))
-
+        # 拼接的四张图像
+        image1 = cv2.imread(current_path + '0_l.bmp')
+        image2 = cv2.imread(current_path + '0_r.bmp')
+        image3 = cv2.imread(current_path + 'left_depth_0000.png')
+        image4 = cv2.imread(current_path + 'right_depth_0000.png')
+        h, w = image1.shape[:2]
+        image = np.zeros((h*2, w*2, 3), np.uint8)
+        image[0:h,0:w] = image1
+        image[0:h,w:] = image2
+        image[h:,0:w] = image3
+        image[h:,w:] = image4
+        cv2.imwrite(current_path + 'preview.jpg',image)
     runing_time = (time.time() - start_time) / 3600.0
     print("script end! total time: " + str(runing_time) + " hours")
 
