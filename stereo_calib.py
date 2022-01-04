@@ -5,12 +5,12 @@
 Description: 
 A calibrating helper for stereo structure-light x3d camera
 
-To run on real camera, set "use_rendered_images = False" then:
+To run on real camera, set "capture = True" then:
 python -m stereo_calib "images/stereocali/"
 This will open camera, grabing the image interactively and do the calibration.
 
-To run on rendered data, set "use_rendered_images = True" then:
-python -m stereo_calib "images/stereocali_render/", change the path accrodingly
+To run on saved data, set "capture = False" then:
+python -m stereo_calib "images/stereocali/", change the path accrodingly
 
 This will call the capture images first to the specified path, and the do the calibrating and save calib.yml to the same path.
 copy it to where you needed.
@@ -30,28 +30,24 @@ if Config.use_high_speed_projector:
 else:
     from projector_pdc03 import PyPDC
 
-use_rendered_images = False # Config.use_rendered_image or use saved images
 
-remove_old_files = True
-
-capture=False
-capture=True and (not use_rendered_images)  # comment this line if capture is not needed
-# write to or not
+capture=False # if capture is not needed
+remove_old_files = True # remove_old_files when capture
+# write to cali_cfg_path or not
 cali_cfg_path = None
-cali_cfg_path = "confs/"  # comment this line if you dont want to update the camera cfg file
+# cali_cfg_path = "confs/"  # comment this line if you dont want to update the camera cfg file
 corners_vertical = 8
 corners_horizontal = 11
-corner_distance = 0.015  # in meters
+corner_distance = 0.014302  # in meters
+light_up_scale = 1.2  # e.g, 1.2, to make the images brighter, incase can not find threshold
 
-if use_rendered_images:
-    print("calibrating for rendered images")
-    cali_cfg_path = "confs/"
-    corners_vertical = 8
-    corners_horizontal = 11
-    corner_distance = 0.014302  # in meters
 
 pattern_size = (corners_horizontal, corners_vertical)
 pdc_03_port = "/dev/ttyUSB0"
+
+def blur_image(image):
+  res = cv2.blur(image, (3, 3))
+  return res
 
 class StereoCalibration(object):
     def __init__(self, filepath):
@@ -126,6 +122,8 @@ class StereoCalibration(object):
     def read_images(self, cal_path):
         images_left = glob.glob(cal_path + '/left_*.png')
         images_right = glob.glob(cal_path + '/right_*.png')
+        # images_left = glob.glob(cal_path + '/left/*.png')
+        # images_right = glob.glob(cal_path + '/right/*.png')
         images_left.sort()
         images_right.sort()
         print(images_left)
@@ -134,9 +132,12 @@ class StereoCalibration(object):
         for i, fname in enumerate(images_right):
             img_l = cv2.imread(images_left[i], cv2.IMREAD_UNCHANGED)
             img_r = cv2.imread(images_right[i], cv2.IMREAD_UNCHANGED)
-
-            gray_l = img_l # cv2.cvtColor(img_l, cv2.COLOR_BGR2GRAY)
-            gray_r = img_r # cv2.cvtColor(img_r, cv2.COLOR_BGR2GRAY)
+            # img_l = blur_image(img_l)
+            # img_r = blur_image(img_r)
+            gray_l = light_up_scale*cv2.cvtColor(img_l, cv2.COLOR_BGR2GRAY)
+            gray_r = light_up_scale*cv2.cvtColor(img_r, cv2.COLOR_BGR2GRAY)
+            gray_l = gray_l.astype(np.uint8)
+            gray_r = gray_r.astype(np.uint8)
 
             # Find the chess board corners
             print("find cor...")
@@ -150,6 +151,8 @@ class StereoCalibration(object):
 
                 rt = cv2.cornerSubPix(gray_l, corners_l, (11, 11),
                                       (-1, -1), self.criteria)
+                if corners_l[0][0][0]+corners_l[0][0][1] > corners_l[-1][0][0]+corners_l[-1][0][1]:
+                    corners_l = corners_l[::-1]
                 self.imgpoints_l.append(corners_l)
 
                 # Draw and display the corners
@@ -160,6 +163,8 @@ class StereoCalibration(object):
 
                 rt = cv2.cornerSubPix(gray_r, corners_r, (11, 11),
                                       (-1, -1), self.criteria)
+                if corners_r[0][0][0]+corners_r[0][0][1] > corners_r[-1][0][0]+corners_r[-1][0][1]:
+                    corners_r = corners_r[::-1]
                 self.imgpoints_r.append(corners_r)
 
                 # Draw and display the corners
@@ -167,8 +172,8 @@ class StereoCalibration(object):
                                                   corners_r, ret_r)
                 cv2.imshow("curr_right", img_r)
                 cv2.waitKey(100)
-                cv2.imwrite(cal_path + "right_" + str(i) + ".jpg", img_r)
-                cv2.imwrite(cal_path + "left_" + str(i) + ".jpg", img_l)
+                cv2.imwrite(cal_path+ str(i) + "_right"  + ".jpg", img_r)
+                cv2.imwrite(cal_path+ str(i) + "_left" + ".jpg", img_l)
 
             img_shape = gray_l.shape[::-1]
 
@@ -227,6 +232,7 @@ class StereoCalibration(object):
         print('T', T)
         print('E', E)
         print('F', F)
+        print("rms:", ret)
 
         # for i in range(len(self.r1)):
         #     print("--- pose[", i+1, "] ---")
@@ -234,8 +240,6 @@ class StereoCalibration(object):
         #     self.ext2, _ = cv2.Rodrigues(self.r2[i])
         #     print('Ext1', self.ext1)
         #     print('Ext2', self.ext2)
-
-        print('')
 
         camera_model = dict([('M1', M1), ('M2', M2), ('dist1', d1),
                             ('dist2', d2), ('rvecs1', self.r1),
@@ -276,7 +280,17 @@ if __name__ == '__main__':
 
     cv2.imwrite(path + "left_0_rectfy.jpg", img_rectified)
     cv2.imwrite(path + "right_0_rectfy.jpg", img_rectified_r)
-    
+
+    cimg = np.hstack((img_rectified, img_rectified_r))
+    cimg = cv2.resize(cimg,(0,0),fx=0.25,fy=0.25)
+    imh, imw, _ = cimg.shape
+    for i in range(0,imh,20):
+        pt1 = (0,i)
+        pt2 = (imw,i)
+        cv2.line(cimg,pt1, pt2, (0,0,255),1)
+    cv2.imshow('show',cimg)
+    cv2.waitKey()
+
     # copy cali files
     if cali_cfg_path is not None:
         # cmd = "cp " + path + "calib.yml" + " " + cali_cfg_path

@@ -255,7 +255,7 @@ if __name__ == "__main__":
             depth_vis = (depth_vis * np.tile(gray_vis[:, :, None], (1, 1, 3))).astype(np.uint8)
             points = gen_point_clouds_from_images(depth_img_mm, depth_camera._camera_kd, depth_vis, save_path="./images/")
         else:
-            points = depth_camera.get_point_cloud(save=Config.save_point_cloud, recaptue_rgb=True)
+            points = depth_camera.get_point_cloud(save=Config.save_point_cloud, recaptue_rgb=False)
         if Config.save_pattern_to_disk:
             shutil.copy(depth_camera._cali_file_path, depth_camera._pattern_path+"/calib.yml")
         import open3d as o3d
@@ -297,12 +297,12 @@ if __name__ == "__main__":
                 # get images
                 rgb_img, gray_img, depth_img = depth_camera.get_images()
                 # save images and post process
-                if rgb_img: cv2.imwrite(current_path+'/rgb_image.png', rgb_img)
+                if rgb_img is not None: cv2.imwrite(current_path+'/rgb_image.png', rgb_img)
                 cv2.imwrite(current_path+'/gray.png', gray_img)
                 cv2.imwrite(current_path+'/depth.exr', depth_img)
                 np.savetxt(current_path+"./camera_kd.txt", depth_camera.get_camera_kp())
                 points = depth_camera.get_point_cloud(save=save_points)
-                if rgb_img: cv2.imshow("img", rgb_img)
+                if rgb_img is not None: cv2.imshow("img", rgb_img)
                 else: cv2.imshow("img", gray_img)
                 # write a preview in saving folder
                 cv2.imwrite(saving_path + current_id_str + '.jpg', gray_img)

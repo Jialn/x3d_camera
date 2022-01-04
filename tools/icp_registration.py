@@ -3,6 +3,7 @@
 # Register all the ply file in the path
 # Install open-3d: "pip3 install open3d", do not use "open3d-python"
 # Usage example: python tools/icp_registration.py temp/icptest/runing_path/
+# 路径下的ply文件和一级子文件夹下的ply文件都会被读取
 
 import open3d as o3d
 import numpy as np
@@ -94,6 +95,7 @@ if __name__ == '__main__':
         for i in range(i+1,len(processed_clouds)):
             processed_clouds[i].transform(reg_p2p_refine.transformation)
             clouds[i].transform(reg_p2p_refine.transformation)
+            o3d.io.write_point_cloud(dataset_path[:-1] + str(i) + "_registered_points.ply", clouds[i], write_ascii=False, compressed=False)
 
     print("rendering")
     vis = o3d.visualization.Visualizer()
