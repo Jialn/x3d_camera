@@ -14,7 +14,7 @@ For usage with dataset gen:
 # (in blender's python path, like C:\tools\blender-2.91.2-windows64\2.91\python\bin)
 # ./python -m pip install --upgrade pip
 # ./python -m pip  config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-# ./python -m pip install opencv-python # imageio pypng not needed
+# ./python -m pip install opencv-python
 # linux:
 # (in blender's python path, like: cd /home/ubuntu/workplace/tools/blender-2.91.2-linux64/2.91/python/bin/)
 # ./python3.7m -m ensurepip
@@ -30,8 +30,6 @@ import json
 import random
 from bpy import context
 from mathutils import Matrix, Vector
-import numpy as np
-import math
 
 
 #######################
@@ -40,6 +38,7 @@ gen_data_set = True
 main_scene_name = "_mainScene"
 left_camera_name_in_scene = 'Camera'
 right_camera_name_in_scene = 'Camera.right'
+debuging_mode_without_rendering = False
 
 ### path
 saving_path = "/home/jiangtao.li/Pictures/"
@@ -428,14 +427,16 @@ def generate_pattern(path, max_bounces=8, use_hdr=False):
         scene.frame_set(frame_nr)
         print("current frame:" + str(frame_nr))
         bpy.data.scenes[main_scene_name].render.filepath = path + str(frame_nr) + "_l"
-        bpy.ops.render.render(write_still=True)
+        if not debuging_mode_without_rendering:
+            bpy.ops.render.render(write_still=True)
         
     scene.camera = bpy.data.objects[right_camera_name_in_scene]
     for frame_nr in frames_range:
         scene.frame_set(frame_nr)
         print("current frame:" + str(frame_nr))
         bpy.data.scenes[main_scene_name].render.filepath = path + str(frame_nr) + "_r"
-        bpy.ops.render.render(animation=False, write_still=True)
+        if not debuging_mode_without_rendering:
+            bpy.ops.render.render(animation=False, write_still=True)
 
     print("generate patterns end!")
 
@@ -455,10 +456,10 @@ def gen_gt(path):
     
     tree = scene.node_tree
     links = tree.links
-    # clear unused nodes
-    for node in tree.nodes:
-        if node.label == 'Depth GT Output':
-            tree.nodes.remove(node)
+    # clear unused nodes - not working for now, remove them after the process
+    # for node in tree.nodes:
+    #     if node.label == 'Depth GT Output':
+    #         tree.nodes.remove(node)
     # Create input render layer node.
     render_layers = tree.nodes.new('CompositorNodeRLayers')
     # add depth node
@@ -481,7 +482,8 @@ def gen_gt(path):
     bpy.data.scenes[main_scene_name].render.filepath = path + "left"
     depth_file_output.file_slots[0].path = scene.render.filepath + '_depth_'
     bpy.data.scenes[main_scene_name].render.filepath = path + str(frame_nr) + "_l"
-    bpy.ops.render.render(animation=False, write_still=True)
+    if not debuging_mode_without_rendering:
+        bpy.ops.render.render(animation=False, write_still=True)
     print(depth_file_output.file_slots[0].path + frame_append + ".exr")
     print(depth_file_output.file_slots[0].path + frame_append + ".png")
     # bpy.data.scenes[main_scene_name].node_tree.nodes['File Output'].format.use_zbuffer = True
@@ -494,7 +496,8 @@ def gen_gt(path):
     bpy.data.scenes[main_scene_name].render.filepath = path + "right"
     depth_file_output.file_slots[0].path = scene.render.filepath + '_depth_'
     bpy.data.scenes[main_scene_name].render.filepath = path + str(frame_nr) + "_r"
-    bpy.ops.render.render(animation=False, write_still=True)
+    if not debuging_mode_without_rendering:
+        bpy.ops.render.render(animation=False, write_still=True)
     # convert exr file to png
     print(depth_file_output.file_slots[0].path + frame_append + ".exr")
     print(depth_file_output.file_slots[0].path + frame_append + ".png")
@@ -520,6 +523,8 @@ def gen_gt(path):
     os.system(cmd)
     scene.cycles.max_bounces = cycles_max_bounces  # 12, 8 or 0
     scene.cycles.samples = cycles_samples  # 128
+    tree.nodes.remove(render_layers)
+    tree.nodes.remove(depth_file_output)
     print("generate gt script end! the path is: " + path)
 
 if gen_data_set:
