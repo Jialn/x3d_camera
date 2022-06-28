@@ -90,7 +90,7 @@ if __name__ == '__main__':
     gray_img = cv2.imread(gray_path, cv2.IMREAD_UNCHANGED)
     if (len(gray_img.shape) > 2): gray_img = cv2.cvtColor(gray_img, cv2.COLOR_BGR2GRAY)
     depth_img_mm = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
-    depth_img_mm[depth_img_mm>800] = 0
+    # depth_img_mm[depth_img_mm>999] = 0
     camera_kd = np.loadtxt(kd_path)
 
     vis_scale = 1
@@ -101,9 +101,9 @@ if __name__ == '__main__':
 
     def on_EVENT_LBUTTONDOWN(event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
-            xy = "%d,%d" % (x, y)
+            xyz = "%d,%d,%.3f" % (x, y, depth_img_mm[y,x])
             cv2.circle(gray_img_vis, (x, y), 6, (255, 0, 0), thickness=1)
-            cv2.putText(gray_img_vis, xy, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), thickness=1)
+            cv2.putText(gray_img_vis, xyz, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), thickness=1)
             cv2.imshow("image", gray_img_vis)
             coord_list.append([(int)(x*vis_scale),(int)(y*vis_scale)])
             #写入txt
