@@ -1,17 +1,22 @@
 # Copyright (c) 2020. All Rights Reserved.
 # Visulize depth using color map by fited ref plane
 # usage: 
-#   1. python tools\points_visulize.py "./images/"
-#   2. the path should include "gray.png  depth.exr  camera_kd.txt"
+#   1. python tools\points_visulize.py "./images/temp/"
+#   2. the path should include "gray.png/jpg depth.exr  camera_kd.txt"
 
 import sys
 import numpy as np
+import os
+os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"  # to support open exr format
 import cv2
 import argparse
 import open3d as o3d
 
-image_path = "./images/temp/"
+use_distance_to_plane = True  # use_distance_to_plane or use abs(z - fit_z)
 image_path = sys.argv[1]
+gray_path = image_path + 'gray.jpg'
+depth_path = image_path + 'depth.exr'
+kd_path = image_path + 'camera_kd.txt'
 
 def gen_point_clouds_from_images(depth, camera_kp, image, save_path=None):
     """Generate PointCloud from images and camera kp
@@ -41,14 +46,14 @@ def gen_point_clouds_from_images(depth, camera_kp, image, save_path=None):
         print("res saved to:" + save_path)
     return pcd
 
-def convert_depth_to_color(depth_map_mm, scale=None, depth_plane=None, percentile=(3, 97)):
+def convert_depth_to_color(depth_map_mm, scale=None, plane_distance=None, percentile=(5, 95)):
     h, w = depth_map_mm.shape[:2]
     depth_image_color_vis = depth_map_mm.copy()
-    valid_points = np.where(depth_image_color_vis>=0.1)
-    if depth_plane is not None: depth_image_color_vis[valid_points] = depth_image_color_vis[valid_points] - depth_plane[valid_points]
+    valid_points = np.where((depth_image_color_vis<=200000) & (depth_image_color_vis>=0.001))
+    if plane_distance is not None: depth_image_color_vis[valid_points] = plane_distance[valid_points]
     # depth_near_cutoff, depth_far_cutoff = np.min(depth_image_color_vis[valid_points]), np.max(depth_image_color_vis[valid_points])
     depth_near_cutoff, depth_far_cutoff = np.percentile(depth_image_color_vis[valid_points], percentile[0]), np.percentile(depth_image_color_vis[valid_points], percentile[1])
-    depth_far_cutoff = depth_near_cutoff + (depth_far_cutoff-depth_near_cutoff) * 1.0
+    depth_far_cutoff = depth_near_cutoff + (depth_far_cutoff-depth_near_cutoff)
     depth_range = depth_far_cutoff-depth_near_cutoff
     # print((depth_near_cutoff, depth_far_cutoff))
     depth_image_color_vis[valid_points] = depth_far_cutoff - depth_image_color_vis[valid_points]  # - depth_near_cutoff
@@ -57,18 +62,38 @@ def convert_depth_to_color(depth_map_mm, scale=None, depth_plane=None, percentil
         depth_image_color_vis = cv2.resize(depth_image_color_vis, ((int)(w*scale), (int)(h*scale)))
     return depth_image_color_vis
 
+if use_distance_to_plane:
+    import numba 
+    from numba import jit
+
+    @jit(nopython=True) 
+    def pix_cord_to_camera_pos(px, py, depthz, kp):
+        point_raw = np.array([px * depthz, py * depthz, depthz])
+        kp_inv = np.linalg.inv(kp)
+        point = np.dot(kp_inv, point_raw.T).T
+        return point[0], point[1], point[2]
+
+    @jit(nopython=True) 
+    def point_distance_to_plane(depth_img_mm, height, width, a, b, c, camera_kd, plane_distance):
+        # z = a*x+b*y+c
+        # （Ax, By, Cz, D）代表：Ax + By + Cz + D = 0  ->  Cz = -(Ax + By + D)   ->  -A/C, -B/C, -D/C, set C to 1      
+        Ax, By, Cz, D = -a, -b, 1, -c
+        mod_area = np.sqrt(np.sum(np.square(np.array([Ax, By, Cz]))))
+        for j in range(height):
+            for i in range(width):
+                x, y, z = pix_cord_to_camera_pos(i, j, depth_img_mm[j, i], kp=camera_kd) 
+                mod_d = Ax * x + By * y + Cz * z + D
+                plane_distance[j, i] = abs(mod_d) / mod_area
+
+
 if __name__ == '__main__':
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('filepath', help='String Filepath')
-    # args = parser.parse_args()
-    # dir = args.filepath
-    dir = image_path
+    gray_img = cv2.imread(gray_path, cv2.IMREAD_UNCHANGED)
+    if (len(gray_img.shape) > 2): gray_img = cv2.cvtColor(gray_img, cv2.COLOR_BGR2GRAY)
+    depth_img_mm = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
+    depth_img_mm[depth_img_mm>800] = 0
+    camera_kd = np.loadtxt(kd_path)
 
-    gray_img = cv2.imread(dir+"gray.png", cv2.IMREAD_UNCHANGED)
-    depth_img_mm = cv2.imread(dir+"depth.exr", cv2.IMREAD_UNCHANGED)
-    camera_kd = np.loadtxt(dir+"camera_kd.txt")
-
-    vis_scale = 2
+    vis_scale = 1
     height, width = gray_img.shape[:2]
     image_vis_size = (width//vis_scale, height//vis_scale)
     gray_img_vis = cv2.resize(gray_img, image_vis_size)
@@ -77,7 +102,6 @@ if __name__ == '__main__':
     def on_EVENT_LBUTTONDOWN(event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
             xy = "%d,%d" % (x, y)
-            # 画圈（图像:img，坐标位置:xy，半径:1(就是一个点)，颜色:蓝，厚度：-1(就是实心)
             cv2.circle(gray_img_vis, (x, y), 6, (255, 0, 0), thickness=1)
             cv2.putText(gray_img_vis, xy, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), thickness=1)
             cv2.imshow("image", gray_img_vis)
@@ -85,7 +109,7 @@ if __name__ == '__main__':
             #写入txt
             x_str = str(x)
             y_str = str(y)
-            f = open(dir + "coordinate.txt", "a+")
+            f = open(image_path + "coordinate.txt", "a+")
             f.writelines(x_str + ' ' + y_str + '\n')
 
     cv2.namedWindow("image")
@@ -99,9 +123,13 @@ if __name__ == '__main__':
     # fit plane
     tmp_A, tmp_b = [], []
     for point in coord_list:
-        if depth_img_mm[point[1], point[0]] > 0.1:
-            tmp_A.append([point[0], point[1], 1])  # [x, y, 1].T
-            tmp_b.append(depth_img_mm[point[1], point[0]])  # z
+        if depth_img_mm[point[1], point[0]] > 0.001:
+            if use_distance_to_plane:
+                x, y, z = pix_cord_to_camera_pos(point[0], point[1], depth_img_mm[point[1], point[0]], kp=camera_kd)
+            else:
+                x, y, z = point[0], point[1], depth_img_mm[point[1], point[0]]
+            tmp_A.append([x, y, 1])  # [x, y, 1].T
+            tmp_b.append(z)  # z
     b = np.matrix(tmp_b).T
     A = np.matrix(tmp_A)
     fit = (A.T * A).I * A.T * b
@@ -110,23 +138,29 @@ if __name__ == '__main__':
     print("solution: z = %f x + %f y + %f" % (fit[0], fit[1], fit[2]))
     print("errors:" + str(errors))
     print("residual:" + str(residual))
-
+    
     # gen color map results
     a, b, c = float(fit[0]), float(fit[1]), float(fit[2])
-    depth_plane=np.fromfunction(lambda i,j: a*j+b*i+c, (height,width), dtype=float)
-    img_res = convert_depth_to_color(depth_img_mm, scale=None, depth_plane=depth_plane, percentile=(5, 90))
-    cv2.imwrite(dir+"depth_vis_res.jpg", img_res)
+    if use_distance_to_plane:
+        plane_distance = np.zeros_like(depth_img_mm)
+        point_distance_to_plane(depth_img_mm, height, width, a, b, c, camera_kd, plane_distance)
+    else:
+        depth_plane = np.fromfunction(lambda i,j: a*j+b*i+c, (height,width), dtype=float)
+        plane_distance = abs(depth_plane - depth_img_mm)
+
+    img_res = convert_depth_to_color(depth_img_mm, scale=None, plane_distance=plane_distance, percentile=(5, 95))
+    cv2.imwrite(image_path+"depth_vis_res.jpg", img_res)
     # gen point clouds
     gray_vis = (0.5 + gray_img / 512.0)
     depth_vis = (img_res * np.tile(gray_vis[:, :, None], (1, 1, 3))).astype(np.uint8)
-    points = gen_point_clouds_from_images(depth_img_mm, camera_kd, depth_vis, save_path=dir+"/points_vis.ply")
+    points = gen_point_clouds_from_images(depth_img_mm, camera_kd, depth_vis, save_path=image_path+"/points_vis.ply")
     # show results
     gray_img_vis = cv2.resize(depth_vis, image_vis_size)
     def on_EVENT_LBUTTONDOWN2(event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
             x_org,y_org = (int)(x*vis_scale),(int)(y*vis_scale)
             cv2.circle(gray_img_vis, (x, y), 3, (255, 255, 255), thickness=1)
-            img_str = "%.3f mm" % (depth_plane[y_org, x_org] - depth_img_mm[y_org, x_org])
+            img_str = "%.3f mm" % (plane_distance[y_org, x_org])
             cv2.putText(gray_img_vis, img_str, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), thickness=1)
             cv2.imshow("image", gray_img_vis)
     cv2.namedWindow("image")
