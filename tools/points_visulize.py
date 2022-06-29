@@ -1,5 +1,5 @@
 # Copyright (c) 2020. All Rights Reserved.
-# Visulize depth using color map by fited ref plane
+# Visulize depth using color map by fited reference plane
 # usage: 
 #   1. python tools\points_visulize.py "./images/temp/"
 #   2. the path should include "gray.png/jpg depth.exr  camera_kd.txt"
@@ -46,13 +46,14 @@ def gen_point_clouds_from_images(depth, camera_kp, image, save_path=None):
         print("res saved to:" + save_path)
     return pcd
 
-def convert_depth_to_color(depth_map_mm, scale=None, plane_distance=None, percentile=(5, 95)):
-    h, w = depth_map_mm.shape[:2]
-    depth_image_color_vis = depth_map_mm.copy()
+def convert_depth_to_color(depth_map, scale=None, plane_distance=None, percentile=(2, 98), over_ride_far_cutoff=None):
+    h, w = depth_map.shape[:2]
+    depth_image_color_vis = depth_map.copy()
     valid_points = np.where((depth_image_color_vis<=200000) & (depth_image_color_vis>=0.001))
     if plane_distance is not None: depth_image_color_vis[valid_points] = plane_distance[valid_points]
     # depth_near_cutoff, depth_far_cutoff = np.min(depth_image_color_vis[valid_points]), np.max(depth_image_color_vis[valid_points])
     depth_near_cutoff, depth_far_cutoff = np.percentile(depth_image_color_vis[valid_points], percentile[0]), np.percentile(depth_image_color_vis[valid_points], percentile[1])
+    if over_ride_far_cutoff: depth_far_cutoff = over_ride_far_cutoff
     depth_far_cutoff = depth_near_cutoff + (depth_far_cutoff-depth_near_cutoff)
     depth_range = depth_far_cutoff-depth_near_cutoff
     # print((depth_near_cutoff, depth_far_cutoff))
@@ -74,14 +75,14 @@ if use_distance_to_plane:
         return point[0], point[1], point[2]
 
     @jit(nopython=True) 
-    def point_distance_to_plane(depth_img_mm, height, width, a, b, c, camera_kd, plane_distance):
+    def point_distance_to_plane(depth_img, height, width, a, b, c, camera_kd, plane_distance):
         # z = a*x+b*y+c
         # （Ax, By, Cz, D）代表：Ax + By + Cz + D = 0  ->  Cz = -(Ax + By + D)   ->  -A/C, -B/C, -D/C, set C to 1      
         Ax, By, Cz, D = -a, -b, 1, -c
         mod_area = np.sqrt(np.sum(np.square(np.array([Ax, By, Cz]))))
         for j in range(height):
             for i in range(width):
-                x, y, z = pix_cord_to_camera_pos(i, j, depth_img_mm[j, i], kp=camera_kd) 
+                x, y, z = pix_cord_to_camera_pos(i, j, depth_img[j, i], kp=camera_kd) 
                 mod_d = Ax * x + By * y + Cz * z + D
                 plane_distance[j, i] = abs(mod_d) / mod_area
 
@@ -89,8 +90,7 @@ if use_distance_to_plane:
 if __name__ == '__main__':
     gray_img = cv2.imread(gray_path, cv2.IMREAD_UNCHANGED)
     if (len(gray_img.shape) > 2): gray_img = cv2.cvtColor(gray_img, cv2.COLOR_BGR2GRAY)
-    depth_img_mm = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
-    # depth_img_mm[depth_img_mm>999] = 0
+    depth_img = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
     camera_kd = np.loadtxt(kd_path)
 
     vis_scale = 1
@@ -101,16 +101,11 @@ if __name__ == '__main__':
 
     def on_EVENT_LBUTTONDOWN(event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
-            xyz = "%d,%d,%.3f" % (x, y, depth_img_mm[y,x])
+            xyz = "%d,%d,%.3f" % (x, y, depth_img[y,x])
             cv2.circle(gray_img_vis, (x, y), 6, (255, 0, 0), thickness=1)
             cv2.putText(gray_img_vis, xyz, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (0, 0, 0), thickness=1)
             cv2.imshow("image", gray_img_vis)
             coord_list.append([(int)(x*vis_scale),(int)(y*vis_scale)])
-            #写入txt
-            x_str = str(x)
-            y_str = str(y)
-            f = open(image_path + "coordinate.txt", "a+")
-            f.writelines(x_str + ' ' + y_str + '\n')
 
     cv2.namedWindow("image")
     cv2.setMouseCallback("image", on_EVENT_LBUTTONDOWN)
@@ -123,11 +118,11 @@ if __name__ == '__main__':
     # fit plane
     tmp_A, tmp_b = [], []
     for point in coord_list:
-        if depth_img_mm[point[1], point[0]] > 0.001:
+        if depth_img[point[1], point[0]] > 0.001:
             if use_distance_to_plane:
-                x, y, z = pix_cord_to_camera_pos(point[0], point[1], depth_img_mm[point[1], point[0]], kp=camera_kd)
+                x, y, z = pix_cord_to_camera_pos(point[0], point[1], depth_img[point[1], point[0]], kp=camera_kd)
             else:
-                x, y, z = point[0], point[1], depth_img_mm[point[1], point[0]]
+                x, y, z = point[0], point[1], depth_img[point[1], point[0]]
             tmp_A.append([x, y, 1])  # [x, y, 1].T
             tmp_b.append(z)  # z
     b = np.matrix(tmp_b).T
@@ -139,28 +134,45 @@ if __name__ == '__main__':
     print("errors:" + str(errors))
     print("residual:" + str(residual))
     
-    # gen color map results
+    # calculate plane_distance
     a, b, c = float(fit[0]), float(fit[1]), float(fit[2])
     if use_distance_to_plane:
-        plane_distance = np.zeros_like(depth_img_mm)
-        point_distance_to_plane(depth_img_mm, height, width, a, b, c, camera_kd, plane_distance)
+        plane_distance = np.zeros_like(depth_img)
+        point_distance_to_plane(depth_img, height, width, a, b, c, camera_kd, plane_distance)
     else:
         depth_plane = np.fromfunction(lambda i,j: a*j+b*i+c, (height,width), dtype=float)
-        plane_distance = abs(depth_plane - depth_img_mm)
+        plane_distance = abs(depth_plane - depth_img)
 
-    img_res = convert_depth_to_color(depth_img_mm, scale=None, plane_distance=plane_distance, percentile=(5, 95))
+    print("select visuliazing range by clicking the image")
+    img_res = convert_depth_to_color(depth_img, scale=None, plane_distance=plane_distance, percentile=(2, 98))
+    def on_EVENT_LBUTTONDOWN_SET_RANGE(event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            x_org,y_org = (int)(x*vis_scale),(int)(y*vis_scale)
+            far_cut_off = plane_distance[y_org, x_org]
+            print("far_cut_off: " + str(far_cut_off))
+            global img_res
+            img_res = convert_depth_to_color(depth_img, scale=None, plane_distance=plane_distance, percentile=(2, 98), over_ride_far_cutoff=far_cut_off)
+            cv2.imshow("image", img_res)
+    cv2.namedWindow("image")
+    cv2.setMouseCallback("image", on_EVENT_LBUTTONDOWN_SET_RANGE)
+    cv2.imshow("image", img_res)
+    while (True):
+        key = cv2.waitKey(100)
+        if key == 27: break  # ESC
+    cv2.destroyAllWindows()
     cv2.imwrite(image_path+"depth_vis_res.jpg", img_res)
+
     # gen point clouds
     gray_vis = (0.5 + gray_img / 512.0)
     depth_vis = (img_res * np.tile(gray_vis[:, :, None], (1, 1, 3))).astype(np.uint8)
-    points = gen_point_clouds_from_images(depth_img_mm, camera_kd, depth_vis, save_path=image_path+"/points_vis.ply")
+    points = gen_point_clouds_from_images(depth_img, camera_kd, depth_vis, save_path=image_path+"/points_vis.ply")
     # show results
     gray_img_vis = cv2.resize(depth_vis, image_vis_size)
     def on_EVENT_LBUTTONDOWN2(event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
             x_org,y_org = (int)(x*vis_scale),(int)(y*vis_scale)
             cv2.circle(gray_img_vis, (x, y), 3, (255, 255, 255), thickness=1)
-            img_str = "%.3f mm" % (plane_distance[y_org, x_org])
+            img_str = "%.3f" % (plane_distance[y_org, x_org])
             cv2.putText(gray_img_vis, img_str, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), thickness=1)
             cv2.imshow("image", gray_img_vis)
     cv2.namedWindow("image")
